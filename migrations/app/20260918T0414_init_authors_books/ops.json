@@ -1,0 +1,220 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.authors",
+    "label": "Create table \"authors\"",
+    "summary": "Creates table \"authors\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "authors"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"authors\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"authors\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"authors\"",
+        "sql": "CREATE TABLE \"public\".\"authors\" (\n  \"biography\" text,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" BIGSERIAL NOT NULL,\n  \"name\" character varying(255) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"authors\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"authors\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.books",
+    "label": "Create table \"books\"",
+    "summary": "Creates table \"books\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "books"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"books\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"books\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"books\"",
+        "sql": "CREATE TABLE \"public\".\"books\" (\n  \"author_id\" int8 NOT NULL,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" BIGSERIAL NOT NULL,\n  \"isbn\" character varying(13),\n  \"published_year\" int2,\n  \"title\" character varying(255) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"books\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"books\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.books.books_isbn_key",
+    "label": "Add unique constraint on \"books\" (isbn)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "books_isbn_key",
+        "table": "books"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"books_isbn_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "books_isbn_key",
+          "public",
+          "\"public\".\"books\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"books_isbn_key\"",
+        "sql": "ALTER TABLE \"public\".\"books\" ADD CONSTRAINT \"books_isbn_key\" UNIQUE (\"isbn\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"books_isbn_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "books_isbn_key",
+          "public",
+          "\"public\".\"books\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.books.idx_books_author_id_f3862461",
+    "label": "Create index \"idx_books_author_id_f3862461\" on \"books\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "idx_books_author_id_f3862461",
+        "table": "books"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"idx_books_author_id_f3862461\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"idx_books_author_id_f3862461\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"idx_books_author_id_f3862461\"",
+        "sql": "CREATE INDEX \"idx_books_author_id_f3862461\" ON \"public\".\"books\" (\"author_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"idx_books_author_id_f3862461\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"idx_books_author_id_f3862461\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.books.books_author_id_fkey",
+    "label": "Add foreign key \"books_author_id_fkey\" on \"books\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "books_author_id_fkey",
+        "table": "books"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"books_author_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "books_author_id_fkey",
+          "public",
+          "\"public\".\"books\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"books_author_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"books\"\nADD CONSTRAINT \"books_author_id_fkey\"\nFOREIGN KEY (\"author_id\")\nREFERENCES \"public\".\"authors\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"books_author_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "books_author_id_fkey",
+          "public",
+          "\"public\".\"books\""
+        ]
+      }
+    ]
+  }
+]

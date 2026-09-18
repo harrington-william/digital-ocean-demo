@@ -1,0 +1,78 @@
+name: digital_ocean
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: digital_ocean_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: digital_ocean_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Postgres
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - digital_ocean_data:/var/lib/postgresql/data
+      - ./backups:/backups
+
+    networks:
+      - digital_ocean_network
+
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -h localhost -U postgres -d digital_ocean_db"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: digital_ocean_pgadmin
+    restart: unless-stopped
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: postgres@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: Postgres
+
+    ports:
+      - "5050:80"
+
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+    networks:
+      - digital_ocean_network
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  digital_ocean_data:
+    name: digital_ocean_data
+
+  pgadmin_data:
+    name: pgadmin_data
+
+networks:
+  digital_ocean_network:
+    driver: bridge
+    internal: false
