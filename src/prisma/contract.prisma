@@ -17,8 +17,6 @@ model Book {
   title         VarChar(255)
   isbn          VarChar(13)?  @unique
   publishedYear SmallInt?     @map("published_year")
-  createdAt     TimestamptzString @default(now()) @map("created_at")
-
   @@map("books")
   @@index([authorId], name: "idx_books_author_id")
 }
