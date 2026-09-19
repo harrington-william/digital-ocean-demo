@@ -37,6 +37,32 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: digital_ocean_app
+    restart: unless-stopped
+
+    environment:
+      DATABASE_URL: postgresql://postgres:Postgres@postgres:5432/digital_ocean_db
+
+    ports:
+      - "3000:3000"
+
+    networks:
+      - digital_ocean_network
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: digital_ocean_pgadmin
